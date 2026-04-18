@@ -1,0 +1,534 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Link Share Pro</title>
+    
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- QR Code Library -->
+    <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.1/build/qrcode.min.js"></script>
+    
+    <!-- Tailwind CSS (Standalone via CDN) -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Tailwind Configuration -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        darkBg: '#0f0f11',
+                        cardBg: '#1a1a1e',
+                        accent: '#bb86fc',
+                        accentDark: '#3700b3',
+                        success: '#03dac5',
+                        danger: '#cf6679'
+                    },
+                    fontFamily: {
+                        sans: ['Poppins', 'sans-serif']
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body {
+            background-color: #0f0f11;
+            color: white;
+            font-family: 'Poppins', sans-serif;
+        }
+        
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0f0f11;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #333;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #555;
+        }
+
+        /* Hide scrollbar for horizontal scrolling but keep functionality */
+        .hide-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .hide-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+
+        /* Modal Animation */
+        .modal-enter {
+            animation: modalFadeIn 0.3s ease-out forwards;
+        }
+        @keyframes modalFadeIn {
+            from { opacity: 0; transform: scale(0.95) translateY(10px); }
+            to { opacity: 1; transform: scale(1) translateY(0); }
+        }
+    </style>
+</head>
+<body class="min-h-screen p-4 md:p-6 lg:p-8 max-w-7xl mx-auto">
+
+    <!-- Header -->
+    <header class="flex flex-col md:flex-row justify-between items-center gap-4 pb-6 mb-6 border-b border-white/10">
+        <div class="flex items-center gap-3 text-2xl font-bold text-accent">
+            <i class="fas fa-link text-3xl"></i>
+            <span>Link Share Pro</span>
+        </div>
+        <div class="relative w-full md:w-80">
+            <i class="fas fa-search absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"></i>
+            <input 
+                type="text" 
+                id="searchInput"
+                placeholder="Search links..." 
+                class="w-full bg-cardBg text-white pl-12 pr-4 py-3 rounded-full focus:outline-none focus:ring-2 focus:ring-accent transition-all"
+            >
+        </div>
+    </header>
+
+    <div class="grid grid-cols-1 lg:grid-cols-[250px_1fr] gap-8">
+        
+        <!-- Sidebar (Desktop) -->
+        <aside class="bg-cardBg rounded-2xl p-5 h-fit hidden lg:block">
+            <h3 class="flex items-center gap-2 text-lg font-semibold mb-4 text-white/90">
+                <i class="fas fa-folder"></i> Categories
+            </h3>
+            <ul class="space-y-1" id="desktopCategories">
+                <!-- Categories injected via JS -->
+            </ul>
+        </aside>
+
+        <!-- Mobile Categories (Horizontal Scroll) -->
+        <div class="lg:hidden flex overflow-x-auto gap-2 pb-2 -mx-4 px-4 snap-x hide-scrollbar" id="mobileCategories">
+            <!-- Categories injected via JS -->
+        </div>
+
+        <!-- Main Content -->
+        <main class="flex flex-col gap-6">
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-cardBg rounded-2xl p-4 sm:p-5">
+                <h3 class="text-xl font-semibold" id="currentCategoryTitle">My Saved Links</h3>
+                <div class="flex w-full sm:w-auto gap-3">
+                    <button 
+                        onclick="openModal('addLinkModal')"
+                        class="flex-1 sm:flex-none flex items-center justify-center gap-2 bg-accentDark hover:bg-accent text-white px-5 py-2.5 rounded-full font-medium transition-all hover:-translate-y-0.5"
+                    >
+                        <i class="fas fa-plus"></i> Add Link
+                    </button>
+                    <button 
+                        onclick="openModal('settingsModal')"
+                        class="flex items-center justify-center gap-2 bg-white/10 hover:bg-white/20 text-white px-5 py-2.5 rounded-full font-medium transition-all"
+                    >
+                        <i class="fas fa-cog"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Links Grid Container -->
+            <div id="linksContainer" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
+                <!-- Links injected via JS -->
+            </div>
+        </main>
+    </div>
+
+    <!-- Add Link Modal -->
+    <div id="addLinkModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden items-center justify-center p-4">
+        <div class="bg-cardBg rounded-2xl w-full max-w-md p-6 sm:p-8 relative modal-enter">
+            <button onclick="closeModal('addLinkModal')" class="absolute top-4 right-4 text-gray-400 hover:text-white">
+                <i class="fas fa-times text-xl"></i>
+            </button>
+            <h2 class="text-2xl font-bold text-accent mb-6 flex items-center gap-2">
+                <i class="fas fa-plus"></i> Add New Link
+            </h2>
+            
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium mb-1.5 text-gray-300">URL *</label>
+                    <input type="url" id="linkUrl" placeholder="https://example.com" class="w-full bg-black/50 border border-white/10 rounded-xl px-4 py-3 focus:outline-none focus:border-accent transition-colors" required>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium mb-1.5 text-gray-300">Title (Optional)</label>
+                    <input type="text" id="linkTitle" placeholder="Enter a custom title" class="w-full bg-black/50 border border-white/10 rounded-xl px-4 py-3 focus:outline-none focus:border-accent transition-colors">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium mb-1.5 text-gray-300">Category</label>
+                    <select id="linkCategory" class="w-full bg-black/50 border border-white/10 rounded-xl px-4 py-3 focus:outline-none focus:border-accent transition-colors appearance-none">
+                        <!-- Options injected via JS -->
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium mb-1.5 text-gray-300">Description (Optional)</label>
+                    <textarea id="linkDescription" placeholder="Add a description..." class="w-full bg-black/50 border border-white/10 rounded-xl px-4 py-3 focus:outline-none focus:border-accent transition-colors min-h-[100px] resize-y"></textarea>
+                </div>
+            </div>
+            
+            <div class="flex justify-end gap-3 mt-8">
+                <button onclick="closeModal('addLinkModal')" class="px-5 py-2.5 rounded-full font-medium hover:bg-white/5 transition-colors">Cancel</button>
+                <button onclick="saveLink()" class="bg-accentDark hover:bg-accent text-white px-6 py-2.5 rounded-full font-medium transition-colors">Save Link</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- QR Code Modal -->
+    <div id="qrModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden items-center justify-center p-4">
+        <div class="bg-cardBg rounded-2xl w-full max-w-sm p-8 relative flex flex-col items-center modal-enter">
+            <button onclick="closeModal('qrModal')" class="absolute top-4 right-4 text-gray-400 hover:text-white">
+                <i class="fas fa-times text-xl"></i>
+            </button>
+            <h2 class="text-2xl font-bold text-accent mb-8 flex items-center gap-2">
+                <i class="fas fa-qrcode"></i> Scan QR
+            </h2>
+            <div class="bg-white p-4 rounded-xl mb-8" id="qrcode">
+                <!-- QR Code injected here -->
+            </div>
+            <button onclick="alert('Downloading QR Code is currently a placeholder function.')" class="flex items-center gap-2 bg-white/10 hover:bg-white/20 text-white px-6 py-3 rounded-full font-medium transition-all w-full justify-center">
+                <i class="fas fa-download"></i> Download QR
+            </button>
+        </div>
+    </div>
+
+    <!-- Settings Modal -->
+    <div id="settingsModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden items-center justify-center p-4">
+        <div class="bg-cardBg rounded-2xl w-full max-w-md p-6 sm:p-8 relative modal-enter">
+            <button onclick="closeModal('settingsModal')" class="absolute top-4 right-4 text-gray-400 hover:text-white">
+                <i class="fas fa-times text-xl"></i>
+            </button>
+            <h2 class="text-2xl font-bold text-accent mb-6 flex items-center gap-2">
+                <i class="fas fa-cog"></i> Settings
+            </h2>
+            
+            <div class="space-y-6">
+                <div>
+                    <h3 class="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-4">Security</h3>
+                    <div class="flex items-center justify-between bg-black/30 p-4 rounded-xl border border-white/5">
+                        <div class="flex items-center gap-4">
+                            <div class="bg-accent/20 p-2 rounded-lg text-accent">
+                                <i class="fas fa-lock"></i>
+                            </div>
+                            <div>
+                                <h4 class="font-medium">Password Protection</h4>
+                                <p class="text-xs text-gray-400">Require password to view links</p>
+                            </div>
+                        </div>
+                        <label class="relative inline-flex items-center cursor-pointer">
+                            <input type="checkbox" class="sr-only peer">
+                            <div class="w-11 h-6 bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-accent"></div>
+                        </label>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Application Logic -->
+    <script>
+        // --- Data & State ---
+        const CATEGORIES = [
+            { id: 'all', name: 'All Links', icon: 'fa-star' },
+            { id: 'news', name: 'News', icon: 'fa-newspaper' },
+            { id: 'gaming', name: 'Gaming', icon: 'fa-gamepad' },
+            { id: 'shopping', name: 'Shopping', icon: 'fa-shopping-cart' },
+            { id: 'education', name: 'Education', icon: 'fa-graduation-cap' },
+            { id: 'development', name: 'Development', icon: 'fa-code' },
+            { id: 'revolutionary', name: 'Revolutionary', icon: 'fa-bolt' },
+            { id: 'new-revolutionary', name: 'New Revolutionary', icon: 'fa-wand-magic-sparkles' }
+        ];
+
+        let savedLinks = JSON.parse(localStorage.getItem('lsp_links')) || [];
+        let activeCategory = 'all';
+        let searchQuery = '';
+
+        // --- DOM Elements ---
+        const searchInput = document.getElementById('searchInput');
+        const desktopCategories = document.getElementById('desktopCategories');
+        const mobileCategories = document.getElementById('mobileCategories');
+        const linksContainer = document.getElementById('linksContainer');
+        const currentCategoryTitle = document.getElementById('currentCategoryTitle');
+        const linkCategorySelect = document.getElementById('linkCategory');
+
+        // --- Initialization ---
+        function init() {
+            renderCategories();
+            populateCategoryDropdown();
+            renderLinks();
+
+            // Search listener
+            searchInput.addEventListener('input', (e) => {
+                searchQuery = e.target.value.toLowerCase();
+                renderLinks();
+            });
+        }
+
+        // --- Rendering ---
+        function renderCategories() {
+            // Desktop
+            desktopCategories.innerHTML = CATEGORIES.map(cat => `
+                <li>
+                    <button
+                        onclick="setCategory('${cat.id}')"
+                        class="w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${
+                            activeCategory === cat.id 
+                                ? 'bg-white/10 text-accent font-medium' 
+                                : 'text-gray-400 hover:bg-white/5 hover:text-white'
+                        }"
+                    >
+                        <i class="fas ${cat.icon} w-5 text-center"></i>
+                        ${cat.name}
+                    </button>
+                </li>
+            `).join('');
+
+            // Mobile
+            mobileCategories.innerHTML = CATEGORIES.map(cat => `
+                <button
+                    onclick="setCategory('${cat.id}')"
+                    class="flex-shrink-0 flex items-center gap-2 px-4 py-2 rounded-full snap-start transition-all ${
+                        activeCategory === cat.id 
+                            ? 'bg-accent text-white font-medium' 
+                            : 'bg-cardBg text-gray-400'
+                    }"
+                >
+                    <i class="fas ${cat.icon} text-sm"></i>
+                    <span class="text-sm">${cat.name}</span>
+                </button>
+            `).join('');
+        }
+
+        function populateCategoryDropdown() {
+            linkCategorySelect.innerHTML = CATEGORIES
+                .filter(c => c.id !== 'all')
+                .map(c => `<option value="${c.id}">${c.name}</option>`)
+                .join('') + `<option value="general">General</option>`;
+        }
+
+        function setCategory(id) {
+            activeCategory = id;
+            renderCategories();
+            renderLinks();
+            
+            const cat = CATEGORIES.find(c => c.id === id);
+            currentCategoryTitle.innerText = id === 'all' ? 'My Saved Links' : cat.name;
+        }
+
+        function getDomain(url) {
+            try {
+                return new URL(url).hostname;
+            } catch (e) {
+                return url;
+            }
+        }
+
+        function renderLinks() {
+            const filtered = savedLinks.filter(link => {
+                const matchesSearch = link.title.toLowerCase().includes(searchQuery) || 
+                                      link.url.toLowerCase().includes(searchQuery);
+                const matchesCategory = activeCategory === 'all' || link.category === activeCategory;
+                return matchesSearch && matchesCategory;
+            });
+
+            // Handle Empty States
+            if (filtered.length === 0) {
+                linksContainer.className = "col-span-full bg-cardBg rounded-2xl p-12 flex flex-col items-center text-center";
+                
+                if (savedLinks.length === 0) {
+                    linksContainer.innerHTML = `
+                        <i class="fas fa-link text-6xl text-accent mb-4 opacity-50"></i>
+                        <h2 class="text-2xl font-bold mb-2">No Links Saved Yet</h2>
+                        <p class="text-gray-400 max-w-md mb-6">Start by adding your first link. Save web pages, articles, videos and access them anytime.</p>
+                        <button onclick="openModal('addLinkModal')" class="flex items-center gap-2 bg-accentDark hover:bg-accent text-white px-6 py-3 rounded-full font-medium transition-all">
+                            <i class="fas fa-plus"></i> Add Your First Link
+                        </button>
+                    `;
+                } else {
+                    linksContainer.innerHTML = `
+                        <i class="fas fa-search text-6xl text-accent mb-4 opacity-50"></i>
+                        <h2 class="text-2xl font-bold mb-2">Nothing to show here</h2>
+                        <p class="text-gray-400">No links found for this category or search.</p>
+                    `;
+                }
+                return;
+            }
+
+            // Reset grid class if it was changed by empty state
+            linksContainer.className = "grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6";
+
+            linksContainer.innerHTML = filtered.map(link => `
+                <div 
+                    class="group relative bg-cardBg rounded-2xl overflow-hidden shadow-lg hover:-translate-y-1 hover:shadow-2xl hover:shadow-accent/10 transition-all duration-300 flex flex-col h-full cursor-pointer"
+                    onclick="openLink(event, '${link.url}')"
+                >
+                    <!-- Movie Poster Style Image Area (Mobile 2x2 grid focus) -->
+                    <div class="relative aspect-[3/4] md:aspect-video w-full bg-black overflow-hidden">
+                        <img 
+                            src="${link.image}" 
+                            alt="${link.title}"
+                            onerror="this.src='https://images.unsplash.com/photo-1614850523296-d8c1af93d400?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60'"
+                            class="w-full h-full object-cover opacity-80 group-hover:opacity-100 group-hover:scale-105 transition-all duration-500"
+                        >
+                        <div class="absolute inset-0 bg-gradient-to-t from-cardBg via-cardBg/40 to-transparent"></div>
+                        
+                        <!-- Overlay Content for Mobile (Poster Style) -->
+                        <div class="absolute bottom-0 left-0 w-full p-4 md:hidden">
+                            <h4 class="font-bold text-white leading-tight line-clamp-2 mb-1 drop-shadow-md">${link.title}</h4>
+                            <p class="text-xs text-accent font-medium truncate drop-shadow-md">${getDomain(link.url)}</p>
+                        </div>
+                    </div>
+
+                    <!-- Content Area (Desktop) -->
+                    <div class="hidden md:flex flex-col flex-grow p-5">
+                        <h4 class="font-semibold text-lg mb-2 line-clamp-1">${link.title}</h4>
+                        <p class="text-gray-400 text-sm mb-4 line-clamp-2 flex-grow">${link.description || 'No description provided.'}</p>
+                        <span class="text-accent text-sm truncate mb-4">${link.url}</span>
+                    </div>
+
+                    <!-- Actions Bar -->
+                    <div class="flex justify-between items-center p-3 md:p-5 md:pt-0 border-t border-white/5 md:border-none bg-cardBg relative z-10">
+                        <div class="flex gap-1 md:gap-2">
+                            <button onclick="copyLink(event, '${link.url}')" class="action-btn p-2 md:p-2.5 text-gray-400 hover:text-success hover:bg-white/5 rounded-full transition-colors" title="Copy">
+                                <i class="fas fa-copy"></i>
+                            </button>
+                            <button onclick="showQR(event, '${link.url}')" class="action-btn p-2 md:p-2.5 text-gray-400 hover:text-accent hover:bg-white/5 rounded-full transition-colors" title="QR Code">
+                                <i class="fas fa-qrcode"></i>
+                            </button>
+                        </div>
+                        <button onclick="deleteLink(event, ${link.id})" class="action-btn p-2 md:p-2.5 text-gray-400 hover:text-danger hover:bg-white/5 rounded-full transition-colors" title="Delete">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // --- Actions ---
+        function openLink(e, url) {
+            // Prevent opening if an action button was clicked
+            if (e.target.closest('.action-btn')) return;
+            window.open(url, '_blank');
+        }
+
+        function saveLink() {
+            const urlInput = document.getElementById('linkUrl').value.trim();
+            const titleInput = document.getElementById('linkTitle').value.trim();
+            const categoryInput = document.getElementById('linkCategory').value;
+            const descInput = document.getElementById('linkDescription').value.trim();
+
+            if (!urlInput) {
+                alert("Please enter a valid URL.");
+                return;
+            }
+
+            let finalUrl = urlInput;
+            if (!/^https?:\/\//i.test(finalUrl)) {
+                finalUrl = 'http://' + finalUrl;
+            }
+
+            const finalTitle = titleInput || getDomain(finalUrl);
+            const previewImage = `https://api.microlink.io?url=${encodeURIComponent(finalUrl)}&screenshot=true&meta=false&embed=screenshot.url`;
+
+            const newLink = {
+                id: Date.now(),
+                url: finalUrl,
+                title: finalTitle,
+                category: categoryInput,
+                description: descInput,
+                image: previewImage
+            };
+
+            savedLinks.unshift(newLink);
+            localStorage.setItem('lsp_links', JSON.stringify(savedLinks));
+            
+            closeModal('addLinkModal');
+            
+            // If we are in a specific category, and we added a link to a different one,
+            // maybe we want to switch to 'all' or the new category to see it.
+            if (activeCategory !== 'all' && activeCategory !== categoryInput) {
+                setCategory(categoryInput);
+            } else {
+                renderLinks();
+            }
+
+            // Reset form
+            document.getElementById('linkUrl').value = '';
+            document.getElementById('linkTitle').value = '';
+            document.getElementById('linkDescription').value = '';
+            document.getElementById('linkCategory').value = activeCategory !== 'all' ? activeCategory : 'general';
+        }
+
+        function deleteLink(e, id) {
+            e.stopPropagation();
+            if (confirm("Are you sure you want to delete this link?")) {
+                savedLinks = savedLinks.filter(l => l.id !== id);
+                localStorage.setItem('lsp_links', JSON.stringify(savedLinks));
+                renderLinks();
+            }
+        }
+
+        function copyLink(e, url) {
+            e.stopPropagation();
+            navigator.clipboard.writeText(url).then(() => {
+                alert("Link copied to clipboard!");
+            }).catch(() => {
+                alert("Failed to copy link.");
+            });
+        }
+
+        function showQR(e, url) {
+            e.stopPropagation();
+            const qrContainer = document.getElementById('qrcode');
+            qrContainer.innerHTML = '';
+            new QRCode(qrContainer, {
+                text: url,
+                width: 200,
+                height: 200,
+                colorDark : "#000000",
+                colorLight : "#ffffff",
+            });
+            openModal('qrModal');
+        }
+
+        // --- Modal Management ---
+        function openModal(modalId) {
+            const modal = document.getElementById(modalId);
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+            
+            // If opening add link modal, default the category to the currently active one
+            if (modalId === 'addLinkModal') {
+                const catSelect = document.getElementById('linkCategory');
+                if (activeCategory !== 'all') {
+                    catSelect.value = activeCategory;
+                }
+            }
+        }
+
+        function closeModal(modalId) {
+            const modal = document.getElementById(modalId);
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        }
+
+        // Close modal when clicking outside
+        window.onclick = function(event) {
+            if (event.target.classList.contains('fixed')) {
+                event.target.classList.add('hidden');
+                event.target.classList.remove('flex');
+            }
+        }
+
+        // Start App
+        init();
+    </script>
+</body>
+</html>
